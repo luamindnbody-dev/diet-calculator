@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>루아코치의 체지방 연소 & 다이어트 계산기</title>
+    <title>루아코치의 종합 다이어트 한계 계산기</title>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         
@@ -23,7 +23,7 @@
             padding: 35px 30px; 
             border-radius: 16px; 
             box-shadow: 0 8px 20px rgba(0,0,0,0.05); 
-            max-width: 450px; 
+            max-width: 480px; 
             width: 100%; 
         }
         h2 { 
@@ -71,17 +71,12 @@
             margin-bottom: 12px;
             font-size: 0.95rem;
         }
-        .radio-title {
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 8px;
-            display: block;
-        }
         .radio-item {
             display: flex;
             align-items: center;
             margin-bottom: 6px;
             color: #444;
+            cursor: pointer;
         }
         .radio-item input {
             margin-right: 8px;
@@ -129,7 +124,7 @@
         }
         .theory-box span {
             display: block;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             font-weight: 700;
             margin-top: 5px;
             color: #888;
@@ -151,16 +146,26 @@
         }
         .coach-tip {
             margin-top: 20px;
-            padding: 15px;
+            padding: 18px;
             background-color: #fff9e6;
             border-left: 4px solid #f1c40f;
             border-radius: 4px;
             font-size: 0.95rem;
             color: #555;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         .coach-tip b {
             color: #d35400;
+        }
+        .note { 
+            font-size: 0.8rem; 
+            color: #888; 
+            margin-top: 20px; 
+            line-height: 1.5; 
+            background-color: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
         }
     </style>
 </head>
@@ -215,15 +220,17 @@
             </div>
 
             <div class="comparison-box">
+                <!-- 이론적 최대치 (범위 표시) -->
                 <div class="theory-box">
-                    <div style="font-size: 0.9rem; font-weight: 600;">⚠️ 하루 최대 적자 칼로리 (이론적 한계)</div>
+                    <div style="font-size: 0.9rem; font-weight: 600;">⚠️ 하루 최대 적자 칼로리 (이론적 한계 범위)</div>
                     <span id="max-deficit-theory"></span>
                     <div style="font-size: 0.85rem; margin-top: 5px;">현재 체지방량: <b id="fat-mass-theory"></b>kg 기준</div>
                 </div>
 
+                <!-- 루아코치 권장 안전치 -->
                 <div class="safe-box">
                     <div style="font-size: 1.05rem; font-weight: 700; color: #2c3e50;">✅ 루아코치 권장 안전 결손 칼로리</div>
-                    <div style="font-size: 0.85rem; margin-top: 5px; color: #666;">근손실 및 요요 방지를 위한 하루 실무 마지노선</div>
+                    <div style="font-size: 0.85rem; margin-top: 5px; color: #666;">수분 손실 및 대사 적응을 고려한 실무 마지노선</div>
                     <span id="max-deficit-safe" class="kcal"></span>
                 </div>
             </div>
@@ -232,6 +239,12 @@
                 💡 <b>루아코치의 다이어트 솔루션</b><br><br>
                 건강한 체형 변화를 위해서는 무작정 굶는 것이 아니라, <b>'식단으로 줄이는 칼로리'를 하루 총 소모 칼로리(TDEE)의 20% 이내인 <span id="diet-limit" style="font-weight:bold; font-size:1.1rem; text-decoration:underline;"></span></b>로 제한해야 합니다.<br><br>
                 그 이상의 칼로리 결손이 필요하다면, 반드시 <b>활동량(운동)을 늘려서</b> 나머지를 채워주세요!
+            </div>
+            
+            <div class="note">
+                <b>* 계산 기준 근거 (Alpert, 2005)</b><br>
+                - 논문에 따르면 인체는 하루에 체지방 1kg당 평균 249 ± 25 kJ (약 53.5 ~ 65.5 kcal)의 에너지를 동원할 수 있습니다.<br>
+                - 루아코치 권장 수치(48.5 kcal/kg)는 이 이론적 최대치를 실제 다이어트 현장에 맞춰 보수적으로 하향 조정한 가장 안전한 기준입니다.
             </div>
         </div>
     </div>
@@ -250,7 +263,7 @@
                 return;
             }
 
-            // 1. 기초대사량 (BMR)
+            // 1. 기초대사량 (BMR) - Mifflin-St Jeor
             let bmr = (10 * weight) + (6.25 * height) - (5 * age);
             if(gender === 'male') {
                 bmr += 5;
@@ -263,7 +276,12 @@
 
             // 3. 체지방 연소 한계 계산
             const fatMass = weight * (bodyfat / 100);
-            const theoryDeficit = fatMass * 69.3;
+            
+            // 이론적 한계 (하한 53.5 ~ 상한 65.5)
+            const theoryDeficitLower = fatMass * 53.5;
+            const theoryDeficitUpper = fatMass * 65.5;
+            
+            // 루아코치 안전 기준 (48.5)
             const safeDeficit = fatMass * 48.5;
 
             // 4. 식단 제한 20% 계산
@@ -274,7 +292,9 @@
             document.getElementById('res-tdee').innerText = Math.round(tdee) + " kcal";
             
             document.getElementById('fat-mass-theory').innerText = fatMass.toFixed(1);
-            document.getElementById('max-deficit-theory').innerText = Math.round(theoryDeficit) + " kcal";
+            
+            // 범위로 출력 (예: 600 ~ 750 kcal)
+            document.getElementById('max-deficit-theory').innerText = Math.round(theoryDeficitLower) + " ~ " + Math.round(theoryDeficitUpper) + " kcal";
             document.getElementById('max-deficit-safe').innerText = Math.round(safeDeficit) + " kcal";
             
             document.getElementById('diet-limit').innerText = Math.round(dietLimit) + "kcal 이내";
